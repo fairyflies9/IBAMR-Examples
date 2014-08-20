@@ -1,0 +1,75 @@
+#include "update_target_point_positions.h"
+#include <ibamr/IBTargetPointForceSpec.h>
+
+void
+update_target_point_positions(
+    tbox::Pointer<hier::PatchHierarchy<NDIM> > hierarchy,
+    LDataManager* const l_data_manager,
+    const double current_time,
+    const double dt)
+{
+
+const int finest_ln = hierarchy->getFinestLevelNumber();
+
+   static const double wing_length = 0.1; // wing length (meters)         
+    static const double pi = 4*atan(1);
+
+    static const double Ao=2.5*wing_length; // amplitude of translation
+    static const double B = pi/4; //amplitude of rotation (rad)
+    static const double f = 1; //frequency (1/s)
+    static const double beta = 0; //stroke plane angle
+    static const double phi = 0; //phase delay between rotation and translation
+    static const double alpha_not = pi/2; //mean angle of attack, describes asymmetry between up and down stroke
+
+    static const double L1 = 2; // length of computational domain (meters)
+    static const int N1 = 512; // number of cartesian grid meshwidths at the finest level of the AMR grid
+    static const int npts = ceil(2*(wing_length/L1)*N1); // number of points along the wing
+    static const double ds = wing_length/(npts-1); // wing mesh spacing (meters)
+    
+    double alpha = alpha_not + B*sin(2*pi*f*current_time + phi); //chord orientation relative to the stroke plane
+
+    // Find out the Lagrangian index ranges.
+    const std::pair<int,int>& wing_lag_idxs = l_data_manager->getLagrangianStructureIndexRange(0, finest_ln);
+
+    // Get the LMesh (which we assume to be associated with the finest level of
+    // the patch hierarchy).  Note that we currently need to update both "local"
+    // and "ghost" node data.
+    Pointer<LMesh> mesh = l_data_manager->getLMesh(finest_ln);
+    vector<LNode*> nodes;
+    nodes.insert(nodes.end(), mesh->getLocalNodes().begin(), mesh->getLocalNodes().end());
+    nodes.insert(nodes.end(), mesh->getGhostNodes().begin(), mesh->getGhostNodes().end());
+
+    // Update the target point positions in their associated target point force
+    // specs.
+    tbox::Pointer<hier::PatchLevel<NDIM> > level = hierarchy->getPatchLevel(finest_ln);
+    for (vector<LNode*>::iterator it = nodes.begin(); it != nodes.end(); ++it)
+    {
+        LNode* node_idx = *it;
+        IBTargetPointForceSpec* force_spec = node_idx->getNodeDataItem<IBTargetPointForceSpec>();
+        if (force_spec == NULL) continue;  // skip to next node
+
+        // Here we update the position of the target point.
+        //
+        // NOTES: lag_idx      is the "index" of the Lagrangian point (lag_idx = 0, 1, ..., N-1, where N is the number of Lagrangian points)
+        //        X_target     is the target position of the target point
+        //        X_target[0]  is the x component of the target position
+        //        X_target[1]  is the y component of the target position
+        //        X_target[2]  is the z component of the target position (for a 3D simulation)
+        //
+        // The target position is shifted to the left or right by the
+        // increment dt*V
+
+        const int lag_idx = node_idx->getLagrangianIndex();
+        TinyVector<double,NDIM>& X_target = force_spec->getTargetPointPosition();
+
+
+
+	    if (wing_lag_idxs.first <= lag_idx && lag_idx < wing_lag_idxs.second)
+	      {
+				X_target[0] = (0.5*wing_length - lag_idx*ds)*cos(alpha+beta) + Ao/2*(cos(2*pi*f*current_time))*cos(beta);
+		      X_target[1] = (0.5*wing_length - lag_idx*ds)*sin(alpha+beta) + Ao/2*(cos(2*pi*f*current_time))*sin(beta);
+	      }
+	  }
+   
+    return;
+}// update_target_point_positions
