@@ -2,7 +2,7 @@
 //
 L = 1.0                                   // length of the computational (fluid) domain (m)
 D = 0.1									//diameter of tube (m)
-FRE = 1.0;									//pumping frequency (Hz)
+FRE = 1.0									//pumping frequency (Hz)
 RHO = 1000.0   						//fluid mass density (kg/m^3)
 WO = 10.0								// desired Womersley number
 PI = 4.0*atan(1);						//calculate PI
@@ -91,14 +91,14 @@ IBMethod {                //
                 //
 IBStandardInitializer {                //
    max_levels = MAX_LEVELS                //
-   structure_names = "peri_aforce_512", "heart_tube_512", "heart_peri_512", "heart_race_512", "markers_512"                //   
-   peri_aforce_512 {                //
+   structure_names = "pperi_top_512", "pperi_bot_512", "heart_tube_512", "heart_race_512", "markers_512"                //   
+   pperi_top_512 {                //
+      level_number = MAX_LEVELS - 1                //
+   } //
+   pperi_bot_512 {                //
       level_number = MAX_LEVELS - 1                //
    } //
    heart_tube_512 {                //
-      level_number = MAX_LEVELS - 1                //
-   } //
-   heart_peri_512 {                //
       level_number = MAX_LEVELS - 1                //
    } //
    heart_race_512 {                //

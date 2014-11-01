@@ -14,7 +14,6 @@ Lt = Let+2*Nend*ds;                 % Length of straight section with three rigi
 diameter = 0.1;                     % diameter of the tube
 R2 = 0.1;                           % radius of inner wall
 R1 = R2+diameter;                   % radius of outer wall
-percont = 0.8;                      %percent contraction for applied force peristalsis
 
 Nstraight = 2*ceil(Lt/ds);          % number of points along each straight section
 Ncurve = 2*ceil(pi*R1/ds);          % number of points along each curved section
@@ -47,7 +46,7 @@ Na2 = Na1+NLa-1;                    % index of the ending point with respect to 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Parameters for the prescribed peristalsis
-Lap = 0.3;                          % length of the actuator section
+Lap = 0.03;                          % length of the actuator section
 NLap = ceil(Lap/ds);                  % number of points along each actuator
 Cap = 0.5*Lt;                       % center of the actuator section
 NCap = ceil(ceil(Nstraight/2)*Cap/Lt); % index of the center point
@@ -79,7 +78,7 @@ dmy = diameter/(Nmarkersy-1);       %space between markers in y-direction
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % material parameters
 kappa_spring = 2.0e0;               % spring constant (Newton)
-kappa_beam = 1.0e-2;                 % beam stiffness constant (Newton m^2)
+kappa_beam = 5.0e-2;                 % beam stiffness constant (Newton m^2)
 kappa_target = kappa_spring;        % target point penalty spring constant (Newton)
 Fmag = 4.0e0;                % this is my best guess at a reasonable applied force
 phase = 0;                      %initial phase of the oscillating force, where F=Fmag*phase and phase = (1+sin(2*pi*f*t-pi/2));
@@ -367,8 +366,7 @@ fprintf(spring_fid, '%d\n', Nperist);
 
 %elastic part of tube
 for i = 0:(Nperist-1),
-    %fprintf(spring_fid, '%d %d %1.16e %1.16e %d\n', i, i+Nperist, Fmag, phase, 2);
-    fprintf(spring_fid, '%d %d %1.16e %1.16e\n', i, i+Nperist, 0, (1-percont)*diameter);
+    fprintf(spring_fid, '%d %d %1.16e %1.16e %d\n', i, i+Nperist, Fmag, phase, 2);
 end
 
 fclose(spring_fid);

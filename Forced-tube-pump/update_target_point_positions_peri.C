@@ -1,8 +1,8 @@
-#include "update_target_point_positions.h"
+#include "update_target_point_positions_peri.h"
 #include <ibamr/IBTargetPointForceSpec.h>
 
-void
-update_target_point_positions(
+void 
+update_target_point_positions_peri(
     tbox::Pointer<hier::PatchHierarchy<NDIM> > hierarchy,
     LDataManager* const l_data_manager,
     const double current_time,
@@ -16,15 +16,19 @@ update_target_point_positions(
 	////////////////////////////////////////////////////////////////////////////////////////
 	// these parameters require modification to match the desired geometry and motion
 	
-    static const double L1 = 1; // length of computational domain (meters)
+    static const double L1 = 1.0; // length of computational domain (meters)
     static const int N1 = 512; // number of cartesian grid meshwidths at the finest level of the AMR grid
+    static const double ds = L1/(2.0*N1);
+    static const double Let = 0.3;
 	static const double diameter = 0.1;			// diameter of tube
 	static const double R2 = 0.1;				// distance from middle of domain to inner wall
 	static const double R1 = R2+diameter;		// distance from middle of domain to outer wall
 	static const double pamp = 0.8;				//percent occlusion of the tube
 	static const double amp = pamp*diameter/2.0;	//amplitude of contraction of each piece of the actuator
 	static const double freq = 1.0;
- 
+	double s_ramp = 0.5*(1/freq);
+	double c_amp;
+
  ////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Find out the Lagrangian index ranges.
@@ -66,16 +70,25 @@ update_target_point_positions(
 	//IBTK::Vector<double,NDIM>& X_target = force_spec->getTargetPointPosition();
 	Point& X_target = force_spec->getTargetPointPosition();
 	
+	if(current_time<s_ramp)
+	  {
+	    c_amp = current_time/s_ramp;
+	  }
+	else
+	  {c_amp = 1;
+	  }
 		//move the top piece
 	    if (actuator_top_idxs.first <= lag_idx && lag_idx < actuator_top_idxs.second)
 	      {
-				X_target[1] = -R2-(amp/2)*(1+sin(2*pi*freq*current_time - pi/2));
+		int ipos = lag_idx-actuator_top_idxs.first;
+		X_target[1] = -R2-(amp)*c_amp*(sin(-2*pi*freq*current_time + 2*pi*(ipos*ds/Let)));
 	      }
 		//move the bottom piece
 		if (actuator_bot_idxs.first <= lag_idx && lag_idx < actuator_bot_idxs.second)
 	      {
-				X_target[1] = -R1+(amp/2)*(1+sin(2*pi*freq*current_time - pi/2));
+		int ipos = lag_idx-actuator_bot_idxs.first;
+		X_target[1] = -R1+(amp)*c_amp*(sin(-2*pi*freq*current_time + 2*pi*(ipos*ds/Let)));
 	      }
     }
     return;
-}// update_target_point_positions
+}// update_target_point_positions_peri

@@ -25,6 +25,7 @@
 
 // Headers for application specific operations.
 #include "update_target_point_positions.h"
+#include "update_target_point_positions_peri.h"
 #include "update_springs_vp_aforce.h"
 #include "update_springs_peri_aforce.h"
 
@@ -70,7 +71,8 @@ peri_spring_force(
 {
     const double F = params[0];
     const double phase_fun = params[1];
-    return F*phase_fun;
+    return F*(phase_fun - (1.0/((R*512.0/4.0)*(R*512.0/4.0))));  //I've added a penalty that will hopefully stop the boundaries from getting too close
+    //return F*phase_fun;
 }// frequency_spring_force
 
 
@@ -247,8 +249,9 @@ main(
             dt = time_integrator->getMaximumTimeStepSize();
             LDataManager* l_data_manager = ib_method_ops->getLDataManager();
             //update_target_point_positions(patch_hierarchy, l_data_manager, loop_time, dt);
+            update_target_point_positions_peri(patch_hierarchy, l_data_manager, loop_time, dt);
 	        //update_springs_vp_aforce(patch_hierarchy, l_data_manager, loop_time, dt);
-	        update_springs_peri_aforce(patch_hierarchy, l_data_manager, loop_time, dt);
+	        //update_springs_peri_aforce(patch_hierarchy, l_data_manager, loop_time, dt);
             time_integrator->advanceHierarchy(dt);
             loop_time += dt;
 
